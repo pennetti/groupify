@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Spotify Apps API Tutorial
 
 This is a Spotify App that shows useful code snippets that can help you build
@@ -54,3 +55,7 @@ This is a Spotify App that shows useful code snippets that can help you build
  * [@SpotifyPlatform](https://twitter.com/#!/SpotifyPlatform) on Twitter
 
 Your feedback is welcome! Feel free to create issues and send pull requests.
+=======
+thesis
+======
+>>>>>>> 551caa08a3b9a40f52449a39fd8acebe66e6334e
