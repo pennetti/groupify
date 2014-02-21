@@ -1,66 +1,71 @@
+require([
+  '$api/models',
+  // '/js/echonest',
+], function(models) {
+'use strict';
 
-// function EchoNest(apiKey) {
-//     this.end_point = 'http://developer.echonest.com/api/v4/';
-//     this.api_key = apiKey;
+var EchoNest = function (apiKey) {
+  this.end_point = 'http://developer.echonest.com/api/v4/';
+  this.api_key = apiKey;
 
-//     this.artist = new Artist(this);
-//     this.playlist = new Playlist(this);
-//     this.catalog = new Catalog(this);
-//     this.tracer = null;
+  // this.artist = new Artist(this);
+  // this.playlist = new Playlist(this);
+  this.catalog = new Catalog(this);
+  this.tracer = null;
 
-//     this.defaultErrorHandler = function() {
-//         console.log('Unhandled Echo Nest error');
-//     };
-// }
+  this.defaultErrorHandler = function() {
+      console.log('Unhandled Echo Nest error');
+  };
+}
 
-// EchoNest.prototype.now = function() {
-//     return new Date().getTime();
-// }
+EchoNest.prototype.now = function() {
+    return new Date().getTime();
+}
 
-// EchoNest.prototype.apiRequest = function(method, args, callback, error, type) {
-//     var url = this.end_point + method;
-//     var that = this;
+EchoNest.prototype.apiRequest = function(method, args, callback, error, type) {
+    var url = this.end_point + method;
+    var that = this;
 
-//     args.api_key = this.api_key;
-//     if (!type) {
-//         type = 'GET'
-//     }
+    args.api_key = this.api_key;
+    if (!type) {
+        type = 'GET'
+    }
 
-//     function isOK(data) {
-//         return data && data.response && data.response.status && data.response.status.code == 0;
-//     }
+    function isOK(data) {
+        return data && data.response && data.response.status && data.response.status.code == 0;
+    }
 
-//     function handleError(data) {
-//         if (error) {
-//             error(data);
-//         } else {
-//             that.defaultErrorHandler(data);
-//         }
-//     }
+    function handleError(data) {
+        if (error) {
+            error(data);
+        } else {
+            that.defaultErrorHandler(data);
+        }
+    }
 
-//     function myCallback(data) {
-//         console.log('apiRequest results', url, data);
-//         console.log('apiRequest time', that.now() - start, 'ms');
-//         if (isOK(data)) {
-//             if (callback) {
-//                 callback(data);
-//             } else {
-//                 console.log('apiRequest OK', data);
-//             }
-//         } else {
-//             handleError(data);
-//         }
-//     }
+    function myCallback(data) {
+        console.log('apiRequest results', url, data);
+        console.log('apiRequest time', that.now() - start, 'ms');
+        if (isOK(data)) {
+            if (callback) {
+                callback(data);
+            } else {
+                console.log('apiRequest OK', data);
+            }
+        } else {
+            handleError(data);
+        }
+    }
 
-//     var start = this.now();
-//     console.log('apiRequest', url, args);
+    var start = this.now();
+    console.log('apiRequest', url, args);
 
-//     if (this.tracer) {
-//         this.tracer(method, args);
-//     }
-//     return $.ajax(url, {cache:false,  data:args, error: handleError,
-//             success:myCallback, traditional:true, type:type});
-// }
+    if (this.tracer) {
+        this.tracer(method, args);
+    }
+    return $.ajax(url, {cache:false,  data:args, error: handleError,
+            success:myCallback, traditional:true, type:type});
+}
 
 
 // function Artist(en) {
@@ -153,57 +158,62 @@
 // };
 
 
-// function Catalog(en) {
-//     this.en = en;
-// }
+ var Catalog = function(en) {
+    this.en = en;
+}
 
-// Catalog.prototype.create = function(name, callback, error) {
-//     this.en.apiRequest('catalog/create', {name:name, type:'general'}, callback, error, 'POST');
-// };
+Catalog.prototype.create = function(name, callback, error) {
+    this.en.apiRequest('catalog/create', {name:name, type:'general'}, callback, error, 'POST');
+};
 
-// Catalog.prototype.addArtists = function(catalogID, updateBlock, callback, error) {
-//     var data = JSON.stringify(updateBlock);
-//     this.en.apiRequest('catalog/update', {id:catalogID, data:data, data_type:'json'}, callback, error, 'POST');
-// };
+Catalog.prototype.addArtists = function(catalogID, updateBlock, callback, error) {
+    var data = JSON.stringify(updateBlock);
+    this.en.apiRequest('catalog/update', {id:catalogID, data:data, data_type:'json'}, callback, error, 'POST');
+};
 
-// Catalog.prototype.delete = function(catalogID, callback, error) {
-//     this.en.apiRequest('catalog/delete', {id:catalogID}, callback, error, 'POST');
-// };
+Catalog.prototype.delete = function(catalogID, callback, error) {
+    this.en.apiRequest('catalog/delete', {id:catalogID}, callback, error, 'POST');
+};
 
-// Catalog.prototype.status = function(ticket, callback, error) {
-//     this.en.apiRequest('catalog/status', {ticket:ticket}, callback, error);
-// };
+Catalog.prototype.status = function(ticket, callback, error) {
+    this.en.apiRequest('catalog/status', {ticket:ticket}, callback, error);
+};
 
-// Catalog.prototype.read = function(id, start, results, bucket, callback, error) {
-//     this.en.apiRequest('catalog/read', {id:id, start:start, results:results, bucket:bucket}, callback, error);
-// };
+Catalog.prototype.read = function(id, start, results, bucket, callback, error) {
+    this.en.apiRequest('catalog/read', {id:id, start:start, results:results, bucket:bucket}, callback, error);
+};
 
-// Catalog.prototype.pollForStatus = function(ticket, callback, error) {
-//     var that = this;
-//     var pollPeriod = 1000;
+Catalog.prototype.pollForStatus = function(ticket, callback, error) {
+    var that = this;
+    var pollPeriod = 1000;
 
-//     function poll() {
-//         that.status(ticket, localCallback, error);
-//     }
+    function poll() {
+        that.status(ticket, localCallback, error);
+    }
 
-//     function localCallback(data) {
-//         if (data.response.ticket_status === 'pending') {
-//             callback(data);
-//             setTimeout(poll, pollPeriod);
-//         } else if (data.response.ticket_status === 'complete') {
-//             callback(data);
-//         } else {
-//             error(data);
-//         }
-//     }
+    function localCallback(data) {
+        if (data.response.ticket_status === 'pending') {
+            callback(data);
+            setTimeout(poll, pollPeriod);
+        } else if (data.response.ticket_status === 'complete') {
+            callback(data);
+        } else {
+            error(data);
+        }
+    }
 
-//     poll();
-// };
+    poll();
+};
 
-// Catalog.prototype.profileByName = function(name, callback, error) {
-//     this.en.apiRequest('catalog/profile', {name:name},  callback, error);
-// };
+Catalog.prototype.profileByName = function(name, callback, error) {
+    this.en.apiRequest('catalog/profile', {name:name},  callback, error);
+};
 
-// Catalog.prototype.profile = function(id, callback, error) {
-//     this.en.apiRequest('catalog/profile', {id:id},  callback, error);
-// };
+Catalog.prototype.profile = function(id, callback, error) {
+    this.en.apiRequest('catalog/profile', {id:id},  callback, error);
+};
+
+exports.EchoNest = EchoNest;
+exports.Catalog = Catalog;
+
+});
