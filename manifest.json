@@ -17,12 +17,6 @@
       "title": {
         "en": "Home"
       }
-    },
-    {
-      "arguments": "tabs",
-      "title": {
-        "en": "How to use tabs"
-      }
     }
   ],
   "Dependencies": {
@@ -35,5 +29,5 @@
   "RequiredPermissions": [
     "http://*.echonest.com"
   ],
-  "VendorIdentifier": "co.spotify"
+  "VendorIdentifier": "com.spotify"
 }

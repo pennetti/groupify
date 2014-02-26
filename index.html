@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="$views/css/list.css">
     <link rel="stylesheet" href="$views/css/buttons.css">
     <link rel="stylesheet" href="css/main.css">
+    <!-- <link rel="stylesheet" href="css/bootstrap.min.css"> -->
     <!-- TODO: add 'cursor: move' to the css for friend names -->
   </head>
   <body>
@@ -15,19 +16,32 @@
     <script src="/js/echonest.js"></script>
     <script src="/js/tasteprofile.js"></script>
 
-    <div class="columns">
-      <h2>Friends List</h2>
-      <ul id="facebook-friends"></ul>
+    <div >
+      <div >
 
-      <h2>Drop Box</h2>
-      <div id="drop-box"></div>
-      <ul id="group-list"></ul>
+        <div >
+          <h2>Friends List</h2>
+          <ul id="facebook-friends" height=""></ul>
+        </div>
 
-      <h2>Recommend</h2>
-      <button id="aggregate-pref">Aggregate Preferences</button>
-      <button id="aggregat-rec">Aggregate Recommendations</button>
+        <div >
+          <h2>Drop Box</h2>
+          <div id="drop-box"></div>
+          <ul id="group-list"></ul>
+        </div>
+
+        <div >
+          <h2>Recommend</h2>
+          <button id="aggregate-pref">Aggregate Preferences</button>
+          <button id="aggregate-rec">Aggregate Recommendations</button>
+          <br />
+          <button id="reset-taste">Reset Taste</button>
+        </div>
+
+      </div>
     </div>
 
-    <script src="/js/rainbow-custom.min.js"></script>
+    <!-- // <script src="/js/bootstrap.min.js"></script> -->
+
   </body>
 </html>
