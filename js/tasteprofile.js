@@ -132,13 +132,18 @@ require([
     en.playlist.create(args,
       function(data) {
         console.log(data);
-          // fetchNextTrack();
+          fetchNextTrack();
       },
       function() {
         console.log("Trouble creating playlist session");
       }
     );
   }
+
+  var getNextTrack = function () {
+
+  };
+
   var tasteProfileReady = function (id) {
     // console.log("We've got everything we need, here we go ...");
     catalogID = id;
@@ -146,18 +151,39 @@ require([
     // startPlaying();
   };
 
-  var getStaticPlaylist = function (id) {
-    en.playlist.static(id, 20,
+  var getStaticPlaylist = function () {
+    en.playlist.static(catalogID, 20,
       function(data) {
         console.log(data.response.songs);
+        console.log(data.response.songs[0]);
+        savePlaylist('temp',data.response.songs)
       },
 
       function(data) {
-        console.log(id);
+        console.log(data);
         console.log('trouble making playlist from catalog ', data);
       }
     );
   };
+
+  /* Reverse URI mapping from Echo Nest back to Spotify */
+  function getSpotifyID(song) {
+    var uri = song.tracks[0].foreign_id;
+    return uri.replace('spotify-WW', 'spotify');
+  }
+
+  function savePlaylist(title, songs) {
+    models.Playlist.create(title).done(function(playlist) {
+      playlist.load("tracks").done(function(playlist) {
+        var tracks = [];
+        for (var i = 0; i < songs.length; i++) {
+          if (songs[i].tracks.length > 0)
+            tracks.push(models.Track.fromURI(getSpotifyID(songs[i])));
+        }
+        playlist.tracks.add(tracks);
+      });
+    });
+  }
 
   var resetTaste = function () {
     // $.removeCookie('tpdemo_catalog_id', cookieOpts);

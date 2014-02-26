@@ -188,9 +188,9 @@ var catalogID = '_CAT_ID_';
   });
 
   document.getElementById('aggregate-rec').addEventListener('click', function(){
-    // tasteprofile.getStaticPlaylist();
+    tasteprofile.getStaticPlaylist();
     // aggregateRecommendations(getGroupList());
-    tasteprofile.createDynamicPlaylist();
+    // tasteprofile.createDynamicPlaylist();
 
   });
 

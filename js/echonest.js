@@ -90,8 +90,8 @@ require([
 
   Playlist.prototype.static = function (catalogID, results, callback, error) {
     this.en.apiRequest('playlist/static',
-      {type:'catalog-radio', seed_catalog:catalogID, adventurousness:0, results:results, bucket:'id:spotify-WW'},
-      callback, error, 'POST'
+      {type:'catalog', bucket:['id:spotify-WW','tracks'], seed_catalog:catalogID, adventurousness:0, results:results},
+      callback, error
     );
   };
 

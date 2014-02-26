@@ -27,7 +27,8 @@
     "en"
   ],
   "RequiredPermissions": [
-    "http://*.echonest.com"
+    "http://*.echonest.com",
+    "http://developer.echonest.com/*"
   ],
   "VendorIdentifier": "com.spotify"
 }
