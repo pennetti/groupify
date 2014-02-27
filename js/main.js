@@ -6,22 +6,23 @@ require([
 ], function(facebook, models, throbber, tasteprofile) {
   'use strict';
 
+  // TODO: make this a module
+  // TODO: fix friends list throbber
+  // TODO: change document.getElementById('el') calls to jqeury $('el') calls
+
   /* This section retrieves the logged-in user's friends list from Facebook...
    *
    *
    *
    * */
-  var facebookFriends = document.getElementById('facebook-friends');
-  var throb = throbber.Throbber.forElement(facebookFriends);
-  facebook.session.load('friends').done(function(facebookSession) {
+  facebook.session.load('friends').done(function (facebookSession) {
     facebookSession.friends.snapshot()
-    .done(function(friends) {
-      friends.toArray().forEach(function(friend) {
+    .done(function (friends) {
+      friends.toArray().forEach(function (friend) {
         if (friend.user != null) {
           createFriendLink(friend, createFriendsListItem);
         }
       });
-      throb.hide();
     })/* .fail(); */;
   });
 
@@ -29,12 +30,11 @@ require([
     var friendStarredPlaylistURI = friend.user.uri + ":starred";
 
     models.Playlist.fromURI(friendStarredPlaylistURI).load('tracks')
-    .done(function(playlist) {
-      playlist.tracks.snapshot(0, 1)
-      .done(function(snapshot) {
-        if (snapshot.length !== 0) {
+    .done(function (playlist) {
+      playlist.tracks.snapshot(1)
+      .done(function (snapshot) {
+        if (snapshot.length !== 0)
           listItemCallback(friendStarredPlaylistURI, friend.name);
-        }
       })/* .fail(); */;
     })/* .fail(); */;
   }
@@ -42,7 +42,6 @@ require([
   function createFriendsListItem(link, text) {
     var a = document.createElement('a');
     a.href = link;
-    // a.className = 'list-group-item';
     a.draggable = true;
     a.innerHTML = text;
     a.addEventListener('dragstart', function (e) {
@@ -120,7 +119,7 @@ require([
     return promise;
   }
 
-var catalogID = '_CAT_ID_';
+  var catalogID = '_CAT_ID_';
 
   function aggregatePreferences(userURIList) {
     var allArtists = { };
@@ -133,9 +132,9 @@ var catalogID = '_CAT_ID_';
 
     models.Promise.join(promises)
     .done(function (results) {
-      results.forEach(function(playlist) {
-        playlist.forEach(function(track) {
-          track.artists.forEach(function(artist) {
+      results.forEach(function (playlist) {
+        playlist.forEach(function (track) {
+          track.artists.forEach(function (artist) {
             if (artist.uri in allArtists)
               allArtists[artist.uri]++;
             else
@@ -145,8 +144,7 @@ var catalogID = '_CAT_ID_';
       });
       // console.log(allArtists); To return just artist uris use Object.keys()
       // var tp = new tasteprofile.TasteProfile();
-      catalogID = tasteprofile.createTasteProfile(allArtists);
-      // console.log(catalogID);
+      tasteprofile.createTasteProfile(allArtists);
     });
   }
 

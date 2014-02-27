@@ -44,6 +44,8 @@ require([
     var blocks = getArtistUpdateBlock(artists);
     console.log("Creating Taste Profile...");
 
+    var ret =  new models.Promise();
+
     if (artists.length <= 2) {
       alert("Sorry, need at least 3 artists. More is better");
     } else {
@@ -52,10 +54,10 @@ require([
       en.catalog.create(catName,
         function(data) {
           var catalogID = data.response.id;
-          updateTasteProfile(catalogID, blocks);
+          models.Promise.join(updateTasteProfile(catalogID, blocks), ret);
           console.log(catalogID);
+          ret.setDone(catalogID);
           // getStaticPlaylist(catalogID);
-          return catalogID;
         },
 
         function(data) {
@@ -63,6 +65,8 @@ require([
         }
       );
     }
+
+    return ret;
   };
 
   var getArtistUpdateBlock = function (artists) {
@@ -89,12 +93,14 @@ require([
     // var progressBar = $("#progress-bar");
     console.log("Uploading your taste to The Echo Nest");
     // progressBar.css('width', '20%');
+    var prom = new models.Promise();
 
     en.catalog.addArtists(id, blocks,
       function(data) {
         var ticket = data.response.ticket;
         en.catalog.pollForStatus(ticket,
           function(data) {
+            prom.setDone(data);
             if (data.response.ticket_status === 'pending') {
               // var percent = 20 + Math.round(80 * data.response.percent_complete / 100.0)
               // console.log("Resolving artists " + percent + " % complete");
@@ -103,6 +109,7 @@ require([
               // progressBar.css('width', '100%');
               console.log("Done!");
               tasteProfileReady(id);
+              getStaticPlaylist();
 
             } else {
               console.log("Can't resolve taste profile " + data.response.details);
@@ -117,6 +124,8 @@ require([
       function(data) {
         console.log("Trouble adding artists to catalog");
       });
+
+    return prom;
   };
 
   var createDynamicPlaylist = function () {
