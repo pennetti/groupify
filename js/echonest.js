@@ -1,8 +1,7 @@
 require([
-  '$api/models',
-  // '/js/echonest',
+  '$api/models'
 ], function(models) {
-'use strict';
+  'use strict';
 
   var EchoNest = function (apiKey) {
     this.end_point = 'http://developer.echonest.com/api/v4/';
@@ -14,7 +13,7 @@ require([
     this.tracer = null;
 
     this.defaultErrorHandler = function () {
-      console.log('Unhandled Echo Nest error');
+      // console.log('Unhandled Echo Nest error');
     };
   }
 
@@ -24,11 +23,11 @@ require([
 
   EchoNest.prototype.apiRequest = function (method, args, callback, error, type) {
     var url = this.end_point + method;
-    var that = this;
+    var _this = this;
 
     args.api_key = this.api_key;
     if (!type) {
-      type = 'GET'
+      type = 'GET';
     }
 
     function isOK(data) {
@@ -42,18 +41,18 @@ require([
       if (error) {
         error(data);
       } else {
-        that.defaultErrorHandler(data);
+        _this.defaultErrorHandler(data);
       }
     }
 
     function myCallback(data) {
-      console.log('apiRequest results', url, data);
-      console.log('apiRequest time', that.now() - start, 'ms');
+      // console.log('apiRequest results', url, data);
+      // console.log('apiRequest time', _this.now() - start, 'ms');
       if (isOK(data)) {
         if (callback) {
           callback(data);
         } else {
-          console.log('apiRequest OK', data);
+          // console.log('apiRequest OK', data);
         }
       } else {
         handleError(data);
@@ -61,7 +60,7 @@ require([
     }
 
     var start = this.now();
-    console.log('apiRequest', url, args);
+    // console.log('apiRequest', url, args);
 
     if (this.tracer) {
       this.tracer(method, args);
@@ -95,31 +94,31 @@ require([
     );
   };
 
-  Playlist.prototype.create =  function(config, callback, error) {
-    var that = this;
+  Playlist.prototype.create = function(config, callback, error) {
+    var _this = this;
     this.config = config;
     this.en.apiRequest('playlist/dynamic/create', config,
       function(data) {
-        console.log('create', data);
-        that.sessionID = data.response.session_id;
+        // console.log('create', data);
+        _this.sessionID = data.response.session_id;
         callback(data);
       }, error
     );
   };
 
-  Playlist.prototype.restart =  function(config, callback, error) {
-    var that = this;
+  Playlist.prototype.restart = function(config, callback, error) {
+    var _this = this;
     config.session_id = this.sessionID;
 
     this.en.apiRequest('playlist/dynamic/restart', config,
       function(data) {
-        that.config = config;
+        _this.config = config;
         callback(data);
       }, error
     );
   };
 
-  Playlist.prototype.nextSong =  function(results, lookahead, callback, error) {
+  Playlist.prototype.nextSong = function(results, lookahead, callback, error) {
     var config = {
       session_id:this.sessionID,
       results: results,
@@ -128,11 +127,11 @@ require([
     this.en.apiRequest('playlist/dynamic/next', config, callback, error);
   };
 
-  Playlist.prototype.connect =  function(id, callback) {
+  Playlist.prototype.connect = function(id, callback) {
     this.sessionID = id;
   };
 
-  Playlist.prototype.info =  function(callback, error) {
+  Playlist.prototype.info = function(callback, error) {
     // get the new session info goodness
     var oldEndpoint = this.end_point;
     this.end_point = 'http://ci.sandpit.us/api/v4/';
@@ -140,12 +139,12 @@ require([
     this.end_point = oldEndpoint;
   };
 
-  Playlist.prototype.multifeedback =  function(args, callback, error) {
+  Playlist.prototype.multifeedback = function(args, callback, error) {
     args.session_id = this.sessionID;
     this.en.apiRequest('playlist/dynamic/feedback', args, callback, error);
   };
 
-  Playlist.prototype.steer =  function(param, value, callback, error) {
+  Playlist.prototype.steer = function(param, value, callback, error) {
       var config = {
         session_id: this.sessionID,
       }
@@ -154,7 +153,7 @@ require([
       this.en.apiRequest('playlist/dynamic/steer', config, callback, error);
   };
 
-  Playlist.prototype.feedback =  function(param, value, callback, error) {
+  Playlist.prototype.feedback = function(param, value, callback, error) {
     var config = {
       session_id: this.sessionID,
     }
@@ -190,11 +189,11 @@ require([
   };
 
   Catalog.prototype.pollForStatus = function (ticket, callback, error) {
-    var that = this;
+    var _this = this;
     var pollPeriod = 1000;
 
     function poll() {
-      that.status(ticket, localCallback, error);
+      _this.status(ticket, localCallback, error);
     }
 
     function localCallback(data) {
@@ -220,7 +219,5 @@ require([
   };
 
   exports.EchoNest = EchoNest;
-  // exports.Playlist = Playlist;
-  // exports.Catalog = Catalog;
 
 });

@@ -1,219 +1,128 @@
 require([
   '$api/models',
-  '/js/echonest',
+  '/js/echonest'
 ], function(models, echonest) {
   'use strict';
 
-  var catalogID = 'CAODURO144537BE707';
-
-  var en = new echonest.EchoNest('VO9NDXU6IZBMOMI2X');
-
-
   var TasteProfile = function (en) {
-    // this.en = en;
-    // this.catalogID = '_CATALOG_ID_';
-
+    this.en = new echonest.EchoNest('VO9NDXU6IZBMOMI2X');
   };
 
   TasteProfile.prototype.create = function (artists) {
-    var blocks = getArtistUpdateBlock(artists);
-    console.log("Creating Taste Profile...");
+    var blocks  = getArtistUpdateBlock(artists),
+        promise = new models.Promise(),
+        _this   = this;
 
-    if (artists.length <= 2) {
-      alert("Sorry, need at least 3 artists. More is better");
+    if (artists.length < 3) {
+      alert('Sorry, need at least 3 artists. More is better.');
     } else {
-      console.log("Creating your very own Taste Profile");
+      // TODO: might need to change naming scheme
       var catName = 'manual-' + Math.round(Math.random() * 10000000);
-      en.catalog.create(catName,
-        function(data) {
-          var catalogID = data.response.id;
-          updateTasteProfile(catalogID, blocks);
-          console.log(catalogID);
-          getStaticPlaylist(catalogID);
-          return catalogID;
+      _this.en.catalog.create(catName,
+        function (data) {
+          var id = data.response.id;
+          _this.updateTasteProfile(id, blocks).done(function () {
+            promise.setDone(id);
+          });
         },
 
-        function(data) {
-          console.log("Couldn't create catalog " + catName);
+        function (data) {
+          // Couldn't create catalog
         }
       );
     }
+    return promise;
   };
 
-  var createTasteProfile = function (artists) {
-    var blocks = getArtistUpdateBlock(artists);
-    console.log("Creating Taste Profile...");
-
-    var ret =  new models.Promise();
-
-    if (artists.length <= 2) {
-      alert("Sorry, need at least 3 artists. More is better");
-    } else {
-      console.log("Creating your very own Taste Profile");
-      var catName = 'manual-' + Math.round(Math.random() * 10000000);
-      en.catalog.create(catName,
-        function(data) {
-          var catalogID = data.response.id;
-          models.Promise.join(updateTasteProfile(catalogID, blocks), ret);
-          console.log(catalogID);
-          ret.setDone(catalogID);
-          // getStaticPlaylist(catalogID);
-        },
-
-        function(data) {
-          console.log("Couldn't create catalog " + catName);
-        }
-      );
-    }
-
-    return ret;
-  };
-
+  // TODO: make a method like this for tracks
   var getArtistUpdateBlock = function (artists) {
-    var blocks = [ ];
-    $.each(Object.keys(artists),
-      function(index, artist) {
-        var artistID = $.trim(artist).replace('spotify', 'spotify-WW');
-        var item = {
-          action : 'update',
-          item : {
-            item_id : 'item-' + index,
-            artist_name: artistID,
-            play_count: artists[artist],
-            favorite : true
-          }
+    var blocks  = [ ],
+        index   = 0;
+
+    Object.keys(artists).forEach(function (artist) {
+      var artistID = artist.trim().replace('spotify', 'spotify-WW');
+      var item = {
+        action : 'update',
+        item : {
+          item_id : 'item-' + index,
+          artist_name: artistID,
+          play_count: artists[artist],  // Test if this has an effect
+          favorite : true
         }
-        blocks.push(item);
       }
-    );
+      index++;
+      blocks.push(item);
+    });
     return blocks;
   }
 
-  var updateTasteProfile = function (id, blocks) {
-    // var progressBar = $("#progress-bar");
-    console.log("Uploading your taste to The Echo Nest");
-    // progressBar.css('width', '20%');
-    var prom = new models.Promise();
+  TasteProfile.prototype.updateTasteProfile = function (id, blocks) {
+    var promise = new models.Promise(),
+        _this   = this;
 
-    en.catalog.addArtists(id, blocks,
-      function(data) {
+    _this.en.catalog.addArtists(id, blocks,
+      function (data) {
         var ticket = data.response.ticket;
-        en.catalog.pollForStatus(ticket,
-          function(data) {
-            prom.setDone(data);
+        _this.en.catalog.pollForStatus(ticket,
+          function (data) {
             if (data.response.ticket_status === 'pending') {
-              // var percent = 20 + Math.round(80 * data.response.percent_complete / 100.0)
-              // console.log("Resolving artists " + percent + " % complete");
-              // progressBar.css('width', percent  + '%');
+              // Loading...
             } else if (data.response.ticket_status === 'complete') {
-              // progressBar.css('width', '100%');
-              console.log("Done!");
-              tasteProfileReady(id);
-              getStaticPlaylist();
-
+              promise.setDone({});
+              // console.log('update complete');
             } else {
-              console.log("Can't resolve taste profile " + data.response.details);
+              // Can't resolve taste profile
+              promise.setFail(this);
             }
           },
-          function() {
-            console.log("Trouble waiting for catalog");
+
+          function () {
+            // Trouble waiting for catalog
           }
         );
       },
 
-      function(data) {
-        console.log("Trouble adding artists to catalog");
-      });
-
-    return prom;
-  };
-
-  var createDynamicPlaylist = function () {
-    console.log("Creating the playlist ...");
-
-    var args = {
-      'bucket': [ 'id:spotify-WW', 'tracks' ],
-      'limit' : true,
-      'type':'catalog-radio',
-      'seed_catalog' : catalogID,
-    };
-
-    en.playlist.create(args,
-      function(data) {
-        console.log(data);
-          fetchNextTrack();
-      },
-      function() {
-        console.log("Trouble creating playlist session");
+      function (data) {
+        // Trouble adding artists to catalog
       }
     );
-  }
-
-  var getNextTrack = function () {
-
+    // console.log('update promise: ', promise);
+    return promise;
   };
 
-  var tasteProfileReady = function (id) {
-    // console.log("We've got everything we need, here we go ...");
-    catalogID = id;
-    // $.cookie('tpdemo_catalog_id', id, {expires:365, path: '/' });
-    // startPlaying();
-  };
+  // about to add callback to this function and change the pl size to a param,
+  // move getspotifyid and saveplaylist methods to main.js and pa
+  TasteProfile.prototype.getStaticPlaylist = function (id, results) {
+    var _this = this,
+        promise = new models.Promise();
 
-  var getStaticPlaylist = function () {
-    en.playlist.static(catalogID, 20,
+    _this.en.playlist.static(id, results,
       function(data) {
-        console.log(data.response.songs);
-        console.log(data.response.songs[0]);
-        savePlaylist('temp',data.response.songs)
+        promise.setDone(data.response.songs);
       },
 
       function(data) {
-        console.log(data);
-        console.log('trouble making playlist from catalog ', data);
+        // Trouble making playlist from catalog
+        promise.setFail(data);
+      }
+    );
+    // console.log('static playlist promise: ', promise);
+    return promise;
+  };
+
+  TasteProfile.prototype.resetTaste = function (id) {
+    var _this = this;
+
+    _this.en.catalog.delete(id,
+      function (data) {
+        // Success
+      },
+
+      function (data) {
+        // Fail
       }
     );
   };
 
-  /* Reverse URI mapping from Echo Nest back to Spotify */
-  function getSpotifyID(song) {
-    var uri = song.tracks[0].foreign_id;
-    return uri.replace('spotify-WW', 'spotify');
-  }
-
-  function savePlaylist(title, songs) {
-    models.Playlist.create(title).done(function(playlist) {
-      playlist.load("tracks").done(function(playlist) {
-        var tracks = [];
-        for (var i = 0; i < songs.length; i++) {
-          if (songs[i].tracks.length > 0)
-            tracks.push(models.Track.fromURI(getSpotifyID(songs[i])));
-        }
-        playlist.tracks.add(tracks);
-      });
-    });
-  }
-
-  var resetTaste = function () {
-    // $.removeCookie('tpdemo_catalog_id', cookieOpts);
-    en.catalog.delete(catalogID,
-      function() {
-        console.log("Your taste has been deleted");
-      },
-
-      function(data) {
-        console.log('trouble deleting catalog ', data);
-      }
-    );
-    // setTimeout(function() {
-    //   needCatalog();
-    //   $('#resetModal').modal('hide')
-    // }, 500);
-  };
-
-  exports.createTasteProfile = createTasteProfile;
-  exports.updateTasteProfile = updateTasteProfile;
-  exports.getStaticPlaylist = getStaticPlaylist;
-  exports.createDynamicPlaylist = createDynamicPlaylist;
-  exports.resetTaste = resetTaste;
+  exports.TasteProfile = TasteProfile;
 });

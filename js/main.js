@@ -6,6 +6,8 @@ require([
 ], function(facebook, models, throbber, tasteprofile) {
   'use strict';
 
+  var tp = new tasteprofile.TasteProfile();
+
   // TODO: make this a module
   // TODO: fix friends list throbber
   // TODO: change document.getElementById('el') calls to jqeury $('el') calls
@@ -16,8 +18,7 @@ require([
    *
    * */
   facebook.session.load('friends').done(function (facebookSession) {
-    facebookSession.friends.snapshot()
-    .done(function (friends) {
+    facebookSession.friends.snapshot().done(function (friends) {
       friends.toArray().forEach(function (friend) {
         if (friend.user != null) {
           createFriendLink(friend, createFriendsListItem);
@@ -64,6 +65,7 @@ require([
    *
    *
    * */
+   // TODO: fix drag and drop bug where any playlist outside the app becomes last _dropData
   var _dropData = null;
   var dropBox = document.getElementById('drop-box');
 
@@ -105,12 +107,13 @@ require([
   function getUserStarredPlaylist(userURI) {
     var promise = new models.Promise();
 
-    models.Playlist.fromURI(userURI).load('tracks')
-    .done(function(playlist) {
+    models.Playlist.fromURI(userURI)
+    .load('tracks')
+    .done(function (playlist) {
       playlist.tracks.snapshot()
-      .done(function(snapshot){
+      .done(function (snapshot){
         snapshot.loadAll()
-        .done(function(tracks) {
+        .done(function (tracks) {
           promise.setDone(tracks);
         });
       });
@@ -119,11 +122,31 @@ require([
     return promise;
   }
 
-  var catalogID = '_CAT_ID_';
+  /* Reverse URI mapping from EchoNest back to Spotify */
+  function getSpotifyID(echonestID) {
+    return echonestID
+      .tracks[0].foreign_id
+      .replace('spotify-WW', 'spotify');
+  }
+
+  /* Create and save Spotify playlist */
+  function savePlaylist(title, songs) {
+    models.Playlist.create(title).done(function (playlist) {
+      playlist.load('tracks').done(function (playlist) {
+        var tracks = [ ];
+        for (var i = 0; i < songs.length; i++) {
+          if (songs[i].tracks.length) {
+            tracks.push(models.Track.fromURI(getSpotifyID(songs[i])));
+          }
+        }
+        playlist.tracks.add(tracks);
+      });
+    });
+  }
 
   function aggregatePreferences(userURIList) {
-    var allArtists = { };
-    var promises = [ ];
+    var allArtists  = { },
+        promises    = [ ];
 
     for (var i = 0; i < userURIList.length; i++) {
       var promise = getUserStarredPlaylist(userURIList[i]);
@@ -131,26 +154,80 @@ require([
     }
 
     models.Promise.join(promises)
-    .done(function (results) {
-      results.forEach(function (playlist) {
-        playlist.forEach(function (track) {
-          track.artists.forEach(function (artist) {
-            if (artist.uri in allArtists)
-              allArtists[artist.uri]++;
-            else
-              allArtists[artist.uri] = 1;
-          });
+    .each(function (playlist) {
+      playlist.forEach(function (track) {
+        track.artists.forEach(function (artist) {
+          if (artist.uri in allArtists)
+            allArtists[artist.uri]++;
+          else
+            allArtists[artist.uri] = 1;
         });
       });
-      // console.log(allArtists); To return just artist uris use Object.keys()
-      // var tp = new tasteprofile.TasteProfile();
-      tasteprofile.createTasteProfile(allArtists);
+    })
+    .done(function (results) {
+      tp.create(allArtists).done(function (id) {
+        tp.getStaticPlaylist(id, 20).done(function (tracks) {
+          savePlaylist('temp_pref', tracks);
+        });
+      });
     });
   }
 
   function aggregateRecommendations(userURIList) {
-    // TODO: implement
-    tasteprofile.createTasteProfile(["spotify-WW:artist:3ICflSq6ZgYAIrm2CTkfVP"]);
+    var allArtists    = { },
+        artistCollection = [ ],
+        trackPromises = [ ],
+        promises      = [ ],
+        playlist      = [ ],
+        catalogIDs    = [ ];
+
+    var numSongs = 5; // Should be a function of the numbe of people in group
+
+    for (var i = 0; i < userURIList.length; i++) {
+      var promise = getUserStarredPlaylist(userURIList[i]);
+      promises.push(promise);
+    }
+
+    models.Promise.join(promises)
+    .each(function (playlist) {
+      playlist.forEach(function (track) {
+        track.artists.forEach(function (artist) {
+          if (artist.uri in allArtists)
+            allArtists[artist.uri]++;
+          else
+            allArtists[artist.uri] = 1;
+        });
+      });
+      artistCollection.push(allArtists);
+      allArtists = { };
+    })
+    .done(function (results) {
+      artistCollection.forEach(function (collection) {
+        tp.create(collection).done(function (id) {
+          catalogIDs.push(id);
+        })
+        .done(function (collection) {
+          if (catalogIDs.length === artistCollection.length) {
+            console.log('catalogIDs: ', catalogIDs);
+            catalogIDs.forEach(function (catalogID) {
+              tp.getStaticPlaylist(catalogID, numSongs)
+              .done(function (tracks) {
+                tracks.forEach(function (track) {
+                  playlist.push(track);
+                });
+              })
+              .done(function (tracks) {
+                if (playlist.length === (catalogIDs.length * numSongs)) {
+                  savePlaylist('temp_rec', playlist);
+                }
+              });
+            });
+          };
+        });
+      });
+    });
+
+
   }
   /****************************************************************************/
 
@@ -186,14 +263,13 @@ require([
   });
 
   document.getElementById('aggregate-rec').addEventListener('click', function(){
-    tasteprofile.getStaticPlaylist();
-    // aggregateRecommendations(getGroupList());
-    // tasteprofile.createDynamicPlaylist();
-
+    var groupList = getGroupList();
+    if (groupList.length !== 0)
+      aggregateRecommendations(groupList);
   });
 
   document.getElementById('reset-taste').addEventListener('click', function(){
-    tasteprofile.resetTaste();
+    tp.resetTaste();
   });
   /****************************************************************************/
 
