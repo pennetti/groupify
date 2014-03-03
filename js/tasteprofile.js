@@ -34,6 +34,7 @@ require([
         }
       );
     }
+
     return promise;
   };
 
@@ -71,8 +72,7 @@ require([
             } else if (data.response.ticket_status === 'complete') {
               promise.setDone({});
             } else {
-              // Can't resolve taste profile
-              promise.setFail(data);
+              promise.setFail(data); // Can't resolve taste profile
             }
           },
 
@@ -86,6 +86,7 @@ require([
         // Trouble adding artists to catalog
       }
     );
+
     return promise;
   };
 
@@ -103,6 +104,7 @@ require([
         promise.setFail(data);
       }
     );
+
     return promise;
   };
 
@@ -121,9 +123,7 @@ require([
     );
   };
 
-  try {
-    exports.TasteProfile = TasteProfile;
-  } catch (e) {
-    // Ignore, this is to suppress warnings about 'exports'
-  }
+
+  try { exports.TasteProfile = TasteProfile; }
+  catch (e) { /* Ignore, this is to suppress warnings about 'exports' */ }
 });

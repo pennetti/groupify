@@ -1,22 +1,32 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <!-- TODO: verify order of scripts -->
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="/js/echonest.js"></script>
     <script src="/js/tasteprofile.js"></script>
-    <!-- // <script src="code.jquery.com/ui/1.10.4/jquery-ui.js"></script> -->
     <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/themes/smoothness/jquery-ui.css" />
     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
 
-    <!-- <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css"> -->
     <link rel="stylesheet" href="$views/css/image.css">
     <link rel="stylesheet" href="$views/css/list.css">
     <link rel="stylesheet" href="$views/css/buttons.css">
     <link rel="stylesheet" href="css/main.css">
-    <!-- TODO: add 'cursor: move' to the css for friend names -->
     <style>
-    #facebook-friends, #group-list { list-style-type: none; margin: 0; padding: 0 0 2.5em; float: left; margin-right: 10px; }
-    #facebook-friends li, #group-list li { margin: 0 5px 5px 5px; padding: 5px; font-size: 1.2em; width: 120px; }
+    /* TODO: add this to 'main.css' */
+    #facebook-friends, #group-list {
+      list-style-type: none;
+      margin: 0;
+      padding: 0 0 2.5em;
+      float: left;
+      margin-right: 10px;
+    }
+    #facebook-friends li, #group-list li {
+      margin: 0 5px 5px 5px;
+      padding: 5px;
+      font-size: 1.2em;
+      width: 120px;
+    }
     </style>
     <script>
     $(function() {
@@ -27,13 +37,12 @@
     </script>
   </head>
   <body>
+
     <script src="/js/main.js"></script>
 
     <div>
       <div class="center">
         <h1>Group Recommender</h1>
-
-        <br />
 
         <div id="left">
           <h2>Friends List</h2>
@@ -43,32 +52,24 @@
         <div id="right">
           <h2>Group List</h2>
           <ul id="group-list" class="connectedSortable">
-            <li class="ui-state-highlight"><a href="spotify:user:@:starred">Me</a></li>
+            <li class="ui-state-highlight">
+              <a href="spotify:user:@:starred">Me</a>
+            </li>
           </ul>
         </div>
-
-        <br />
 
         <div id="buttons">
           <h2>Recommend</h2>
           <button id="aggregate-pref">Aggregate Preferences</button>
           <button id="aggregate-rec">Aggregate Recommendations</button>
-          <br />
-          <button id="reset-taste">Reset Taste</button>
         </div>
-
-        <br />
 
         <div id="playlist">
           <div id="playlist-container"></div>
         </div>
 
-        <br />
-
-        <!-- <div> -->
-        <!-- </div> -->
-
       </div>
     </div>
+
   </body>
 </html>

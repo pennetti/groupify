@@ -3,6 +3,8 @@ require([
 ], function(models) {
   'use strict';
 
+  // TODO: add fetchApiKey function
+
   var EchoNest = function(apiKey) {
     this.end_point = 'http://developer.echonest.com/api/v4/';
     this.api_key = apiKey;
@@ -249,9 +251,7 @@ require([
     this.en.apiRequest('tasteprofile/profile', {id: id}, callback, error);
   };
 
-  try {
-    exports.EchoNest = EchoNest;
-  } catch (e) {
-    // Ignore, this is to suppress warnings about 'exports'
-  }
+
+  try { exports.EchoNest = EchoNest; }
+  catch (e) { /* Ignore, this is to suppress warnings about 'exports' */ }
 });

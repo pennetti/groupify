@@ -1,10 +1,10 @@
 require([
   '$api/facebook',
   '$api/models',
-  '$views/throbber',
+  '$views/throbber#Throbber',
   '$views/list#List',
   '/js/tasteprofile'
-], function(facebook, models, throbber, List, tasteprofile) {
+], function(facebook, models, Throbber, List, tasteprofile) {
   'use strict';
 
   var tp = new tasteprofile.TasteProfile();
@@ -16,98 +16,94 @@ require([
   // TODO: make playlist size an option
   // TODO: add profile deletion, maybe put playlist inside app and allow to be saved rather than auto saving
   // TODO: add current user to list of potential group members
+  // TODO: globalize playlist container
 
   // TODO: work on css
+
+  // TODO: sort after async call is made
+  function compare(a,b) {
+    return a.name > b.name;
+  }
 
   /* This section retrieves the logged-in user's friends list from Facebook...
    *
    *
    *
    * */
-  facebook.session.load('friends').done(function(facebookSession) {
-    facebookSession.friends.snapshot().done(function(friends) {
-      friends.toArray().forEach(function(friend) {
-        if (friend.user) {
-          createFriendLink(friend, createFriendsListItem);
-        }
+  var friendList = document.getElementById('facebook-friends'),
+      throbber = Throbber.forElement(friendList);
+  facebook.session.load('friends')
+  .done(function(facebookSession) {
+    facebookSession.friends
+    .snapshot().done(function(friends) {
+      createFriendList(friends.toArray().sort())
+      .done(function() {
+        throbber.hide();
       });
-    })/* .fail(); */;
+    });
   });
 
-  function createFriendLink(friend, listItemCallback) {
-    var friendStarredPlaylistURI = friend.user.uri + ':starred';
+  function createFriendList(friends) {
+    var facebookFriends = document.getElementById('facebook-friends'),
+        promise =  new models.Promise(),
+        friendsLength = friends.length,
+        friendStarredPlaylistUri,
+        friendsProcessed = 0,
+        promises = [ ];
 
-    models.Playlist.fromURI(friendStarredPlaylistURI)
+    friends.forEach(function(friend) {
+      friendsProcessed++;
+      if (friend.user) {
+        friendStarredPlaylistUri = friend.user.uri + ':starred';
+        getPlaylistLength(friendStarredPlaylistUri)
+        .done(function(playlistLength) {
+          if (playlistLength) {
+            createFriendListItem(
+              friendStarredPlaylistUri,
+              friend.name,
+              facebookFriends
+            );
+          }
+        })
+        .done(function(playlistLength) {
+          if (friendsProcessed === friendsLength) {
+            promise.setDone(this);
+          }
+        });
+      }
+    });
+
+    return promise;
+  }
+
+  function getPlaylistLength(playlistUri) {
+    var promise = new models.Promise();
+
+    models.Playlist.fromURI(playlistUri)
     .load('tracks')
     .done(function(playlist) {
       playlist.tracks.snapshot(1)
       .done(function(snapshot) {
-        if (snapshot.length !== 0)
-          listItemCallback(friendStarredPlaylistURI, friend.name);
-      })/* .fail(); */;
-    })/* .fail(); */;
+        promise.setDone(snapshot.length);
+      });
+    });
+
+    return promise;
   }
 
-  function createFriendsListItem(link, text) {
-    var a = document.createElement('a');
+  function createFriendListItem(link, text, parent) {
+    var a = document.createElement('a'),
+        li = document.createElement('li');
+
     a.href = link;
     a.draggable = true;
     a.innerHTML = text;
-    a.addEventListener('dragstart', function(e) {
-      e.dataTransfer.setData('text', this);
-      e.dataTransfer.effectAllowed = 'copy';
-      _dropData = this;
-    }, false);
 
-    var li = document.createElement('li');
     li.className = 'ui-state-highlight';
     li.appendChild(a);
 
-    var facebookFriends = document.getElementById('facebook-friends');
-    facebookFriends.appendChild(li);
+    parent.appendChild(li);
   }
-  /****************************************************************************/
-
-
-  /* This section implements the drag and drop functionality
-   *
-   *
-   *
-   * */
-   // TODO: fix drag and drop bug where any playlist outside the app becomes
-   // last _dropData
-  var _dropData = null;
-  // var dropBox = document.getElementById('drop-box');
-
-  // dropBox.addEventListener('dragenter', function(e) {
-  //   e.preventDefault();
-  //   e.dataTransfer.dropEffect = 'copy';
-  //   // this.classList.add('over'); // CSS classes to change appearance on drag
-  // }, false);
-  // dropBox.addEventListener('dragover', function(e) {
-  //   e.preventDefault();
-  //   e.dataTransfer.dropEffect = 'copy';
-  //   return false;
-  // }, false);
-  // dropBox.addEventListener('dragleave', function(e) {
-  //   e.preventDefault();
-  //   // this.classList.remove('over');
-  // }, false);
-  // dropBox.addEventListener('drop', function(e) {
-  //   e.preventDefault();
-
-  //   var a = document.createElement('a');
-  //   a.href = _dropData.href;
-  //   a.innerHTML = _dropData.innerHTML;
-
-  //   var li = document.createElement('li');
-  //   li.appendChild(a);
-
-  //   var groupList = document.getElementById('group-list');
-  //   groupList.appendChild(li);
-
-  //   _dropData = null;
-  // }, false);
   /****************************************************************************/
 
 
@@ -143,9 +139,10 @@ require([
 
   /* Create and save Spotify playlist */
   function savePlaylist(playlistTitle, playlistTracks) {
-    playlistTitle = playlistTitle + Math.round(Math.random() * 10000000);
+    var playlistContainer = document.getElementById('playlist-container'),
+        throbber = Throbber.forElement(playlistContainer);
 
-    models.Playlist.createTemporary(playlistTitle)
+    models.Playlist.createTemporary(playlistTitle + new Date().getTime())
     .done(function(playlist) {
       playlist.load('tracks')
       .done(function(loadedPlaylist) {
@@ -158,7 +155,8 @@ require([
 
         loadedPlaylist.tracks.add(tracks).done(function(_playlist) {
           var list = List.forPlaylist(_playlist);
-          document.getElementById('playlist-container').appendChild(list.node);
+          playlistContainer.appendChild(list.node);
+          throbber.hide();
           list.init();
         });
       });
@@ -192,12 +190,12 @@ require([
   }
 
   function aggregateArtistRecommendations(userUriList) {
-    var allArtists = { },
+    var tracksPerUser = Math.round(50 / userUriList.length),
+        artistCollection = [ ],
+        catalogIds = [ ],
         playlist = [ ],
         promises = [ ],
-        catalogIds = [ ],
-        artistCollection = [ ],
-        tracksPerUser = Math.round(50 / userUriList.length);
+        allArtists = { };
 
     userUriList.forEach(function(userUri) {
       promises.push(getUserStarredPlaylist(userUri));
@@ -243,48 +241,36 @@ require([
   /****************************************************************************/
 
 
-  /* This section implements the drag and drop functionality
-   *
-   *
-   *
-   * */
-  function getGroupMemberUris() {
-    // TODO: why doesn't forEach work here?
-    var groupMembers = document
-      .getElementById('group-list')
-      .getElementsByTagName('li'),
-        groupMemberUris = [ ];
-    for(var i = 0; i < groupMembers.length; i++) {
-        var groupMember = groupMembers[i].getElementsByTagName('a')[0];
-        groupMemberUris.push(groupMember.href);
-    }
-    return groupMemberUris;
-  }
-  /****************************************************************************/
-
-
   /* This section implements ...
    *
    *
    *
    * */
+  function getGroupMemberUris() {
+    var groupMembers = document
+      .getElementById('group-list')
+      .getElementsByTagName('li'),
+        groupMemberUris = [ ];
+
+    for (var i = 0, len = groupMembers.length; i < len; i++) {
+        var groupMember = groupMembers[i]
+          .getElementsByTagName('a')[0];
+        groupMemberUris.push(groupMember.href);
+    }
+
+    return groupMemberUris;
+  }
+
   document.getElementById('aggregate-pref')
   .addEventListener('click', function() {
     var groupMemberUris = getGroupMemberUris();
-    if (groupMemberUris.length !== 0)
-      aggregateArtistPreferences(groupMemberUris);
+    if (groupMemberUris.length) aggregateArtistPreferences(groupMemberUris);
   });
 
   document.getElementById('aggregate-rec')
   .addEventListener('click', function() {
-    var groupList = getGroupMemberUris();
-    if (groupList.length !== 0)
-      aggregateArtistRecommendations(groupList);
-  });
-
-  document.getElementById('reset-taste')
-  .addEventListener('click', function() {
-    tp.resetTaste();
+    var groupMemberUris = getGroupMemberUris();
+    if (groupMemberUris.length) aggregateArtistRecommendations(groupMemberUris);
   });
   /****************************************************************************/
 });
