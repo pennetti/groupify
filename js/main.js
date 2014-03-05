@@ -2,13 +2,24 @@ require([
   '$api/facebook',
   '$api/models',
   '$views/throbber#Throbber',
-  '$views/list#List',
-  '/js/tasteprofile'
-], function(facebook, models, Throbber, List, tasteprofile) {
+  '/js/tasteprofile',
+  '/js/playlistcontainer'
+], function(facebook, models, Throbber, tasteprofile, playlistcontainer) {
+
   'use strict';
 
-  var tp = new tasteprofile.TasteProfile();
+  // this.pc = new playlistcontainer.PlaylistContainer();
+  // this.tp = new tasteprofile.TasteProfile();
+  // this. = new tasteprofile.TasteProfile();
 
+
+
+  var FriendList = function() {
+
+  };
+
+  var tp = new tasteprofile.TasteProfile();
+  var pc = new playlistcontainer.PlaylistContainer();
   // TODO: make this a module
   // TODO: fix friends list throbber
   // TODO: change document.getElementById('el') calls to jqeury $('el') calls
@@ -21,75 +32,97 @@ require([
   // TODO: work on css
 
   // TODO: sort after async call is made
-  function compare(a,b) {
-    return a.name > b.name;
-  }
 
-  /* This section retrieves the logged-in user's friends list from Facebook...
-   *
-   *
-   *
-   * */
-  var friendList = document.getElementById('facebook-friends'),
-      throbber = Throbber.forElement(friendList);
-  facebook.session.load('friends')
-  .done(function(facebookSession) {
-    facebookSession.friends
-    .snapshot().done(function(friends) {
-      createFriendList(friends.toArray().sort())
-      .done(function() {
-        throbber.hide();
+  facebook.session.load('friends').done(function(facebookSession) {
+    facebookSession.friends.snapshot().done(function(friends) {
+      friends.toArray().forEach(function(friend) {
+        if (friend.user) {
+          createFriendLink(friend, createFriendListItem);
+        }
       });
-    });
+    })/* .fail(); */;
   });
 
-  function createFriendList(friends) {
-    var facebookFriends = document.getElementById('facebook-friends'),
-        promise =  new models.Promise(),
-        friendsLength = friends.length,
-        friendStarredPlaylistUri,
-        friendsProcessed = 0,
-        promises = [ ];
+  function createFriendLink(friend, listItemCallback) {
+    var facebookFriends = document.getElementById('friend-list'),
+        friendStarredPlaylistURI = friend.user.uri + ':starred';
 
-    friends.forEach(function(friend) {
-      friendsProcessed++;
-      if (friend.user) {
-        friendStarredPlaylistUri = friend.user.uri + ':starred';
-        getPlaylistLength(friendStarredPlaylistUri)
-        .done(function(playlistLength) {
-          if (playlistLength) {
-            createFriendListItem(
-              friendStarredPlaylistUri,
-              friend.name,
-              facebookFriends
-            );
-          }
-        })
-        .done(function(playlistLength) {
-          if (friendsProcessed === friendsLength) {
-            promise.setDone(this);
-          }
-        });
-      }
-    });
-
-    return promise;
-  }
-
-  function getPlaylistLength(playlistUri) {
-    var promise = new models.Promise();
-
-    models.Playlist.fromURI(playlistUri)
+    models.Playlist.fromURI(friendStarredPlaylistURI)
     .load('tracks')
     .done(function(playlist) {
       playlist.tracks.snapshot(1)
       .done(function(snapshot) {
-        promise.setDone(snapshot.length);
-      });
-    });
-
-    return promise;
+        if (snapshot.length !== 0)
+          listItemCallback(
+            friendStarredPlaylistURI,
+            friend.name,
+            facebookFriends
+          );
+      })/* .fail(); */;
+    })/* .fail(); */;
   }
+
+
+  // var friendList = document.getElementById('friend-list'),
+  //     throbber = Throbber.forElement(friendList);
+  // facebook.session.load('friends')
+  // .done(function(facebookSession) {
+  //   facebookSession.friends
+  //   .snapshot().done(function(friends) {
+  //     createFriendList(friends.toArray().sort())
+  //     .done(function() {
+  //       throbber.hide();
+  //     });
+  //   });
+  // });
+
+  // function createFriendList(friends) {
+  //   var facebookFriends = document.getElementById('friend-list'),
+  //       promise =  new models.Promise(),
+  //       friendsLength = friends.length,
+  //       friendStarredPlaylistUri,
+  //       friendsProcessed = 0,
+  //       promises = [ ];
+
+  //   friends.forEach(function(friend) {
+  //     friendsProcessed++;
+  //     if (friend.user) {
+  //       friendStarredPlaylistUri = friend.user.uri + ':starred';
+  //       getPlaylistLength(friendStarredPlaylistUri)
+  //       .done(function(playlistLength) {
+  //         if (playlistLength) {
+  //           createFriendListItem(
+  //             friendStarredPlaylistUri,
+  //             friend.name,
+  //             facebookFriends
+  //           );
+  //         }
+  //       })
+  //       .done(function(playlistLength) {
+  //         if (friendsProcessed === friendsLength) {
+  //           promise.setDone(); // Still doesn't work
+  //         }
+  //       });
+  //     }
+  //   });
+
+  //   return promise;
+  // }
+
+  // function getPlaylistLength(playlistUri) {
+  //   var promise = new models.Promise();
+
+  //   models.Playlist.fromURI(playlistUri)
+  //   .load('tracks')
+  //   .done(function(playlist) {
+  //     playlist.tracks.snapshot(1)
+  //     .done(function(snapshot) {
+  //       promise.setDone(snapshot.length);
+  //     });
+  //   });
+
+  //   return promise;
+  // }
 
   function createFriendListItem(link, text, parent) {
     var a = document.createElement('a'),
@@ -130,39 +163,6 @@ require([
     return promise;
   }
 
-  /* Reverse URI mapping from EchoNest back to Spotify */
-  function getSpotifyId(echonestId) {
-    return echonestId
-      .tracks[0].foreign_id
-      .replace('spotify-WW', 'spotify');
-  }
-
-  /* Create and save Spotify playlist */
-  function savePlaylist(playlistTitle, playlistTracks) {
-    var playlistContainer = document.getElementById('playlist-container'),
-        throbber = Throbber.forElement(playlistContainer);
-
-    models.Playlist.createTemporary(playlistTitle + new Date().getTime())
-    .done(function(playlist) {
-      playlist.load('tracks')
-      .done(function(loadedPlaylist) {
-        var tracks = [ ];
-        playlistTracks.forEach(function(playlistTrack) {
-          if (playlistTrack.tracks.length) {
-            tracks.push(models.Track.fromURI(getSpotifyId(playlistTrack)));
-          }
-        });
-
-        loadedPlaylist.tracks.add(tracks).done(function(_playlist) {
-          var list = List.forPlaylist(_playlist);
-          playlistContainer.appendChild(list.node);
-          throbber.hide();
-          list.init();
-        });
-      });
-    });
-  }
-
   function aggregateArtistPreferences(userUriList) {
     var allArtists = { },
         promises = [ ];
@@ -182,8 +182,9 @@ require([
     })
     .done(function(results) {
       tp.create(allArtists).done(function(id) {
-        tp.getStaticPlaylist(id, 50).done(function(tracks) {
-          savePlaylist('temp_pref', tracks);
+        tp.getStaticPlaylist(id, 50)
+        .done(function(tracks) {
+          pc.createTemporaryPlaylist(tracks);
         });
       });
     });
@@ -229,7 +230,7 @@ require([
               })
               .done(function(tracks) {
                 if (playlist.length === (catalogIds.length * tracksPerUser)) {
-                  savePlaylist('temp_rec', playlist);
+                  pc.createTemporaryPlaylist(playlist);
                 }
               });
             });
@@ -271,6 +272,12 @@ require([
   .addEventListener('click', function() {
     var groupMemberUris = getGroupMemberUris();
     if (groupMemberUris.length) aggregateArtistRecommendations(groupMemberUris);
+  });
+
+  document.getElementById('save-playlist')
+  .addEventListener('click', function() {
+    pc.savePlaylist();
+    this.disabled = true;
   });
   /****************************************************************************/
 });

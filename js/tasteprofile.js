@@ -24,7 +24,8 @@ require([
       _this.en.catalog.create(catName,
         function(data) {
           var id = data.response.id;
-          _this.updateTasteProfile(id, blocks).done(function() {
+          _this.updateTasteProfile(id, blocks)
+          .done(function() {
             promise.setDone(id);
           });
         },

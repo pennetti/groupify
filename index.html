@@ -14,14 +14,14 @@
     <link rel="stylesheet" href="css/main.css">
     <style>
     /* TODO: add this to 'main.css' */
-    #facebook-friends, #group-list {
+    #friend-list, #group-list {
       list-style-type: none;
       margin: 0;
       padding: 0 0 2.5em;
       float: left;
       margin-right: 10px;
     }
-    #facebook-friends li, #group-list li {
+    #friend-list li, #group-list li {
       margin: 0 5px 5px 5px;
       padding: 5px;
       font-size: 1.2em;
@@ -30,7 +30,7 @@
     </style>
     <script>
     $(function() {
-      $( "#facebook-friends, #group-list" ).sortable({
+      $( "#friend-list, #group-list" ).sortable({
         connectWith: ".connectedSortable"
       }).disableSelection();
     });
@@ -46,7 +46,7 @@
 
         <div id="left">
           <h2>Friends List</h2>
-          <ul id="facebook-friends" class="connectedSortable"></ul>
+          <ul id="friend-list" class="connectedSortable"></ul>
         </div>
 
         <div id="right">
@@ -66,6 +66,7 @@
 
         <div id="playlist">
           <div id="playlist-container"></div>
+          <button id="save-playlist" disabled=true>Save Playlist</button>
         </div>
 
       </div>
