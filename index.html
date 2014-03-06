@@ -45,7 +45,7 @@
         <h1>Group Recommender</h1>
 
         <div id="left">
-          <h2>Friends List</h2>
+          <h2>Friend List</h2>
           <ul id="friend-list" class="connectedSortable"></ul>
         </div>
 
@@ -58,15 +58,20 @@
           </ul>
         </div>
 
+        <div class="clear">
+
         <div id="buttons">
           <h2>Recommend</h2>
-          <button id="aggregate-pref">Aggregate Preferences</button>
-          <button id="aggregate-rec">Aggregate Recommendations</button>
+          <button id="aggregate-artist-pref">Aggregate Artist Preferences</button>
+          <button id="aggregate-artist-rec">Aggregate Artist Recommendations</button>
+          <button id="aggregate-track-pref">Aggregate Track Preferences</button>
         </div>
 
         <div id="playlist">
           <div id="playlist-container"></div>
-          <button id="save-playlist" disabled=true>Save Playlist</button>
+          <button id="save-playlist" style="visibility:hidden" disabled=true>Save Playlist</button>
+        </div>
+
         </div>
 
       </div>

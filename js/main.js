@@ -2,9 +2,9 @@ require([
   '$api/facebook',
   '$api/models',
   '$views/throbber#Throbber',
-  '/js/tasteprofile',
-  '/js/playlistcontainer'
-], function(facebook, models, Throbber, tasteprofile, playlistcontainer) {
+  '/js/tasteprofile#TasteProfile',
+  '/js/playlistcontainer#PlaylistContainer'
+], function(facebook, models, Throbber, TasteProfile, PlaylistContainer) {
 
   'use strict';
 
@@ -18,8 +18,8 @@ require([
 
   };
 
-  var tp = new tasteprofile.TasteProfile();
-  var pc = new playlistcontainer.PlaylistContainer();
+  var tp = new TasteProfile();
+  var pc = new PlaylistContainer();
   // TODO: make this a module
   // TODO: fix friends list throbber
   // TODO: change document.getElementById('el') calls to jqeury $('el') calls
@@ -40,7 +40,7 @@ require([
           createFriendLink(friend, createFriendListItem);
         }
       });
-    })/* .fail(); */;
+    });
   });
 
   function createFriendLink(friend, listItemCallback) {
@@ -58,8 +58,8 @@ require([
             friend.name,
             facebookFriends
           );
-      })/* .fail(); */;
-    })/* .fail(); */;
+      });
+    });
   }
 
 
@@ -125,8 +125,8 @@ require([
   // }
 
   function createFriendListItem(link, text, parent) {
-    var a = document.createElement('a'),
-        li = document.createElement('li');
+    var li = document.createElement('li'),
+        a = document.createElement('a');
 
     a.href = link;
     a.draggable = true;
@@ -137,15 +137,8 @@ require([
 
     parent.appendChild(li);
   }
-  /****************************************************************************/
 
-
-  /* This section implements...
-   *
-   *
-   *
-   * */
-  function getUserStarredPlaylist(userURI) {
+ function getUserStarredPlaylist(userURI) {
     var promise = new models.Promise();
 
     models.Playlist.fromURI(userURI)
@@ -163,11 +156,39 @@ require([
     return promise;
   }
 
-  function aggregateArtistPreferences(userUriList) {
-    var allArtists = { },
+  // Experimental
+  function aggregateTrackPreferences(userUriObj) {
+    var userUris = Object.keys(userUriObj),
+        promises = [ ],
+        tracks = [ ];
+
+    userUris.forEach(function(userUri) {
+      promises.push(getUserStarredPlaylist(userUri));
+    });
+
+    models.Promise.join(promises)
+    .each(function(playlist) {
+      playlist.forEach(function(track) {
+        tracks.push(track.uri);
+      });
+    })
+    .done(function(results) {
+      tp.createFromTracks(tracks)
+      .done(function(id) {
+        tp.getStaticPlaylist(id, 50)
+        .done(function(tracks) {
+          pc.createTemporaryPlaylist(tracks);
+        });
+      });
+    });
+  }
+
+  function aggregateArtistPreferences(userUriObj) {
+    var userUris = Object.keys(userUriObj),
+        allArtists = { },
         promises = [ ];
 
-    userUriList.forEach(function(userUri) {
+    userUris.forEach(function(userUri) {
       promises.push(getUserStarredPlaylist(userUri));
     });
 
@@ -181,7 +202,7 @@ require([
       });
     })
     .done(function(results) {
-      tp.create(allArtists).done(function(id) {
+      tp.createFromArtists(allArtists).done(function(id) {
         tp.getStaticPlaylist(id, 50)
         .done(function(tracks) {
           pc.createTemporaryPlaylist(tracks);
@@ -190,15 +211,16 @@ require([
     });
   }
 
-  function aggregateArtistRecommendations(userUriList) {
-    var tracksPerUser = Math.round(50 / userUriList.length),
+  function aggregateArtistRecommendations(userUriObj) {
+    var tracksPerUser = Math.round(50 / Object.keys(userUriObj).length),
+        userUris = Object.keys(userUriObj),
         artistCollection = [ ],
+        allArtists = { },
         catalogIds = [ ],
         playlist = [ ],
-        promises = [ ],
-        allArtists = { };
+        promises = [ ];
 
-    userUriList.forEach(function(userUri) {
+    userUris.forEach(function(userUri) {
       promises.push(getUserStarredPlaylist(userUri));
     });
 
@@ -215,7 +237,7 @@ require([
     })
     .done(function(results) {
       artistCollection.forEach(function(collection) {
-        tp.create(collection)
+        tp.createFromArtists(collection)
         .done(function(id) {
           catalogIds.push(id);
         })
@@ -235,43 +257,51 @@ require([
               });
             });
           }
+        })
+        .fail(function(collection) {
+          // Unable to make a taste profile, user does not have enough artists
         });
       });
     });
   }
-  /****************************************************************************/
 
-
-  /* This section implements ...
-   *
-   *
-   *
-   * */
   function getGroupMemberUris() {
-    var groupMembers = document
+    var groupList = document
       .getElementById('group-list')
       .getElementsByTagName('li'),
-        groupMemberUris = [ ];
+        groupUris = { };
 
-    for (var i = 0, len = groupMembers.length; i < len; i++) {
-        var groupMember = groupMembers[i]
-          .getElementsByTagName('a')[0];
-        groupMemberUris.push(groupMember.href);
+    for (var i = 0, len = groupList.length; i < len; i++) {
+        var groupMember = groupList[i].getElementsByTagName('a')[0];
+        groupUris[groupMember.href] = groupMember.innerHTML;
     }
 
-    return groupMemberUris;
+    return groupUris;
   }
 
-  document.getElementById('aggregate-pref')
+  // TODO: change these to Spotify buttons
+  document.getElementById('aggregate-artist-pref')
   .addEventListener('click', function() {
     var groupMemberUris = getGroupMemberUris();
-    if (groupMemberUris.length) aggregateArtistPreferences(groupMemberUris);
+    if (Object.keys(groupMemberUris).length) {
+      aggregateArtistPreferences(groupMemberUris);
+    }
   });
 
-  document.getElementById('aggregate-rec')
+  document.getElementById('aggregate-artist-rec')
   .addEventListener('click', function() {
     var groupMemberUris = getGroupMemberUris();
-    if (groupMemberUris.length) aggregateArtistRecommendations(groupMemberUris);
+    if (Object.keys(groupMemberUris).length) {
+      aggregateArtistRecommendations(groupMemberUris);
+    }
+  });
+
+  document.getElementById('aggregate-track-pref')
+  .addEventListener('click', function() {
+    var groupMemberUris = getGroupMemberUris();
+    if (Object.keys(groupMemberUris).length) {
+      aggregateTrackPreferences(groupMemberUris);
+    }
   });
 
   document.getElementById('save-playlist')
@@ -279,5 +309,4 @@ require([
     pc.savePlaylist();
     this.disabled = true;
   });
-  /****************************************************************************/
 });

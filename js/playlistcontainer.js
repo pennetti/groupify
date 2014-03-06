@@ -8,8 +8,8 @@ require([
   'use strict';
 
   var PlaylistContainer = function() {
-    this._tracks = null;
-    this._list = null;
+    this.tracks = null;
+    this.list = null;
   };
 
   function getSpotifyId(echonestId) {
@@ -24,24 +24,27 @@ require([
         // throbber = Throbber.forElement(playlistContainer),
         _this = this;
 
-    if (_this._tracks === null) _this._tracks = playlistTracks;
+    if (_this.list) _this.list.destroy();
+    _this.tracks = playlistTracks;
 
     Playlist.createTemporary('temp_' + new Date().getTime())
     .done(function(playlist) {
       playlist.load('tracks')
       .done(function(loadedPlaylist) {
         var tracks = [ ];
-        playlistTracks.forEach(function(track) {
+        _this.tracks.forEach(function(track) {
           if (track.tracks.length) {
             tracks.push(Track.fromURI(getSpotifyId(track)));
           }
         });
 
         loadedPlaylist.tracks.add(tracks).done(function(_playlist) {
-          var list = List.forPlaylist(_playlist);
+          _this.list = List.forPlaylist(_playlist);
           // throbber.hide();
-          playlistContainer.appendChild(list.node);
-          list.init();
+          playlistContainer.appendChild(_this.list.node);
+          _this.list.init();
+
+          savePlaylistButton.style.visibility = "visible";
           savePlaylistButton.disabled = false;
         });
       });
@@ -55,7 +58,7 @@ require([
     .done(function(playlist) {
       playlist.load('tracks')
       .done(function(loadedPlaylist) {
-        _this._tracks.forEach(function(track) {
+        _this.tracks.forEach(function(track) {
           if (track.tracks.length) {
             loadedPlaylist.tracks.add(Track.fromURI(getSpotifyId(track)));
           }
@@ -63,7 +66,6 @@ require([
       });
     });
   };
-  // };
 
 
   try { exports.PlaylistContainer = PlaylistContainer; }
