@@ -12,23 +12,8 @@
     <link rel="stylesheet" href="$views/css/list.css">
     <link rel="stylesheet" href="$views/css/buttons.css">
     <link rel="stylesheet" href="css/main.css">
-    <style>
-    /* TODO: add this to 'main.css' */
-    #friend-list, #group-list {
-      list-style-type: none;
-      margin: 0;
-      padding: 0 0 2.5em;
-      float: left;
-      margin-right: 10px;
-    }
-    #friend-list li, #group-list li {
-      margin: 0 5px 5px 5px;
-      padding: 5px;
-      font-size: 1.2em;
-      width: 120px;
-    }
-    </style>
     <script>
+    // TODO: add this to main
     $(function() {
       $( "#friend-list, #group-list" ).sortable({
         connectWith: ".connectedSortable"
@@ -42,6 +27,7 @@
 
     <div>
       <div class="center">
+
         <h1>Group Recommender</h1>
 
         <div id="left">
@@ -60,20 +46,19 @@
 
         <div class="clear">
 
-        <div id="buttons">
+        <div class="buttons">
           <h2>Recommend</h2>
-          <button id="aggregate-artist-pref">Aggregate Artist Preferences</button>
-          <button id="aggregate-artist-rec">Aggregate Artist Recommendations</button>
-          <button id="aggregate-track-pref">Aggregate Track Preferences</button>
+          <div id="aggregate-artist-pref"></div>
+          <div id="aggregate-artist-rec"></div>
+          <!-- <div id="aggregate-track-pref"></div> -->
         </div>
 
         <div id="playlist">
           <div id="playlist-container"></div>
-          <button id="save-playlist" style="visibility:hidden" disabled=true>Save Playlist</button>
+          <div id="save-playlist"></div>
         </div>
 
         </div>
-
       </div>
     </div>
 

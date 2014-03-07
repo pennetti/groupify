@@ -1,18 +1,13 @@
 require([
   '$api/facebook',
   '$api/models',
+  '$views/buttons#Button',
   '$views/throbber#Throbber',
   '/js/tasteprofile#TasteProfile',
   '/js/playlistcontainer#PlaylistContainer'
-], function(facebook, models, Throbber, TasteProfile, PlaylistContainer) {
+], function(facebook, models, Button, Throbber, TasteProfile, PlaylistContainer) {
 
   'use strict';
-
-  // this.pc = new playlistcontainer.PlaylistContainer();
-  // this.tp = new tasteprofile.TasteProfile();
-  // this. = new tasteprofile.TasteProfile();
-
-
 
   var FriendList = function() {
 
@@ -281,6 +276,7 @@ require([
 
   // TODO: change these to Spotify buttons
   document.getElementById('aggregate-artist-pref')
+  .appendChild(Button.withLabel('Aggregate Preferences').node)
   .addEventListener('click', function() {
     var groupMemberUris = getGroupMemberUris();
     if (Object.keys(groupMemberUris).length) {
@@ -289,24 +285,11 @@ require([
   });
 
   document.getElementById('aggregate-artist-rec')
+  .appendChild(Button.withLabel('Aggregate Recommendations').node)
   .addEventListener('click', function() {
     var groupMemberUris = getGroupMemberUris();
     if (Object.keys(groupMemberUris).length) {
       aggregateArtistRecommendations(groupMemberUris);
     }
-  });
-
-  document.getElementById('aggregate-track-pref')
-  .addEventListener('click', function() {
-    var groupMemberUris = getGroupMemberUris();
-    if (Object.keys(groupMemberUris).length) {
-      aggregateTrackPreferences(groupMemberUris);
-    }
-  });
-
-  document.getElementById('save-playlist')
-  .addEventListener('click', function() {
-    pc.savePlaylist();
-    this.disabled = true;
   });
 });

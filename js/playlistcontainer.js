@@ -2,14 +2,24 @@ require([
   '$api/models#Playlist',
   '$api/models#Track',
   '$views/throbber#Throbber',
+  '$views/buttons#Button',
   '$views/list#List'
-  ], function(Playlist, Track, Throbber, List) {
+  ], function(Playlist, Track, Throbber, Button, List) {
 
   'use strict';
 
   var PlaylistContainer = function() {
-    this.tracks = null;
-    this.list = null;
+    var _this = this;
+
+    _this.tracks = null;
+    _this.list = null;
+    _this.save = Button.withLabel('Save Playlist');
+
+    document.getElementById('save-playlist')
+    .addEventListener('click', function() {
+      _this.savePlaylist();
+      _this.save.setDisabled(true);
+    });
   };
 
   function getSpotifyId(echonestId) {
@@ -20,8 +30,7 @@ require([
 
   PlaylistContainer.prototype.createTemporaryPlaylist = function(playlistTracks) {
     var playlistContainer = document.getElementById('playlist-container'),
-        savePlaylistButton = document.getElementById('save-playlist'),
-        // throbber = Throbber.forElement(playlistContainer),
+        throbber = Throbber.forElement(playlistContainer),
         _this = this;
 
     if (_this.list) _this.list.destroy();
@@ -38,14 +47,14 @@ require([
           }
         });
 
-        loadedPlaylist.tracks.add(tracks).done(function(_playlist) {
+        loadedPlaylist.tracks.add(tracks)
+        .done(function(_playlist) {
           _this.list = List.forPlaylist(_playlist);
-          // throbber.hide();
+          throbber.hide();
           playlistContainer.appendChild(_this.list.node);
           _this.list.init();
 
-          savePlaylistButton.style.visibility = "visible";
-          savePlaylistButton.disabled = false;
+          _this.initSaveButton();
         });
       });
     });
@@ -65,6 +74,15 @@ require([
         });
       });
     });
+  };
+
+  PlaylistContainer.prototype.initSaveButton = function() {
+    var _this = this;
+
+    _this.save.setDisabled(false);
+
+    document.getElementById('save-playlist')
+    .appendChild(_this.save.node);
   };
 
 

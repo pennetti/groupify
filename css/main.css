@@ -96,10 +96,23 @@ ul {
 
 }
 
-/* Buttons */
-.buttons button {margin: 0 20px 0 0;}
-#buttons {
+#friend-list, #group-list {
+  list-style-type: none;
+  margin: 0;
+  padding: 0 0 2.5em;
+  float: left;
+  margin-right: 10px;
+}
+#friend-list li, #group-list li {
+  margin: 0 5px 5px 5px;
+  padding: 5px;
+  font-size: 1.2em;
+  width: 120px;
+}
 
+/* Buttons */
+.buttons button {
+  margin: 5px 5px 5px 5px;
 }
 
 body, html {
