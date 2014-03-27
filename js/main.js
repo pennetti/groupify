@@ -28,8 +28,10 @@ require([
 
   // TODO: sort after async call is made
 
-  facebook.session.load('friends').done(function(facebookSession) {
-    facebookSession.friends.snapshot().done(function(friends) {
+  facebook.session.load('friends')
+  .done(function(facebookSession) {
+    facebookSession.friends.snapshot()
+    .done(function(friends) {
       friends.toArray().forEach(function(friend) {
         if (friend.user) {
           createFriendLink(friend, createFriendListItem);
@@ -47,7 +49,7 @@ require([
     .done(function(playlist) {
       playlist.tracks.snapshot(1)
       .done(function(snapshot) {
-        if (snapshot.length !== 0)
+        if (snapshot.length)
           listItemCallback(
             friendStarredPlaylistURI,
             friend.name,
@@ -67,7 +69,7 @@ require([
   //     createFriendList(friends.toArray().sort())
   //     .done(function() {
   //       throbber.hide();
-  //     });
+      // });
   //   });
   // });
 
@@ -197,7 +199,8 @@ require([
       });
     })
     .done(function(results) {
-      tp.createFromArtists(allArtists).done(function(id) {
+      tp.createFromArtists(allArtists)
+      .done(function(id) {
         tp.getStaticPlaylist(id, 50)
         .done(function(tracks) {
           pc.createTemporaryPlaylist(tracks);
